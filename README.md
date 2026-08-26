@@ -12,5 +12,9 @@ Course Topics:
 
 
 
+\## About Me
 
+
+
+\[Your Name] — ISA 401 student learning R, Git, and GitHub.
 
