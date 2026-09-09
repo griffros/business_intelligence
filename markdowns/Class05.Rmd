@@ -1,0 +1,91 @@
+---
+title: "Class05"
+date: "2026-09-09"
+output:   
+  html_document:
+  toc: true
+  toc_float: true
+  number_secitons: true
+  code_download: true
+  code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Game 01: Subsetting Lists
+
+```{r game01}
+campus = jsonlite::fromJSON(
+  "https://isa401-find-your-seat.vercel.app/campus.json")
+```
+
+names(campus)
+
+fsb = campus$Farmer # saving named farmer list on fsb
+
+# Game 01: Floor and Section Count
+
+campus$FSB$floors[["2"]]$sections
+names(campus)
+str(campus)
+campus$Farmer$floors[["2"]]$sections
+
+# Game 01: Isa Section count
+
+rooms = campus$Farmer$floors[["2"]]$rooms
+rooms[rooms$room == "2050", "isa_sections"]
+
+# Part 2 Files on Disk + Reading excel files
+
+```{r occupations}
+occupation = readxl::read_excel(
+  path = "../data/occupation.xlsx",
+  sheet = 5,
+  skip = 1
+)
+occupation = occupation[-c(32, 33, 34), ]
+
+View(occupation)
+```
+
+
+# Read JSON Data
+```{r read_json}
+json_url = "https://data.cincinnati-oh.gov/resource/rvmt-pkmq.json?$limit=100"
+
+crashes_json = jsonlite::fromJSON(json_url)
+dplyr::glimpse(crashes_json)
+```
+
+# Game 02 Cybersecurity
+```{r}
+logins = readr::read_csv(
+  "https://isa401-import-heist.vercel.app/api/stage1"
+)
+
+# Inspect rows/columns
+dplyr::glimpse(logins)
+
+# Inspect row 6
+logins[6, ]
+
+logins$account[6]
+
+# Find user and incorporate to URL
+log = jsonlite::fromJSON(
+  "https://isa401-import-heist.vercel.app/api/stage2?key=smithj31"
+)
+
+str(log)
+
+sum(log$events$action == "DOWNLOAD")
+
+result = jsonlite::fromJSON(
+  "https://isa401-import-heist.vercel.app/api/finish?code=6"
+)
+
+result
+```
