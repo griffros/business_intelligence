@@ -1,0 +1,29 @@
+---
+title: "Hw04"
+output: html_document
+---
+```{r}
+
+#Q1
+con = DBI::dbConnect(RSQLite::SQLite(), "../data/midwest_airbnb.db")
+listings = DBI::dbReadTable(con, "listings")
+nrow(listings)
+
+
+#Q2
+nrow(listings[listings$city == "Columbus", ])
+
+#Q3
+
+chicago = listings[listings$city == "Chicago", ]
+chicago[chicago$price == max(chicago$price, na.rm = TRUE), "name"]
+
+#Q4
+length(unique(chicago$neighbourhood))
+
+#Q5
+sum(listings$host_is_superhost == "t", na.rm = TRUE)
+
+#6
+sum(listings$price > 1000, na.rm = TRUE)
+```
