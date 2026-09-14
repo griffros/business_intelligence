@@ -1,6 +1,12 @@
 ---
 title: "Hw04"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_download: true
+    code_folding: show
 ---
 ```{r}
 
