@@ -1,3 +1,5 @@
+library(querychat)
+
 con = DBI::dbConnect(RSQLite::SQLite(), "data/scout.db")
 
 client = ellmer::chat_openai(
@@ -5,7 +7,7 @@ client = ellmer::chat_openai(
   params = ellmer::params(reasoning_effort = "none")
 )
 
-qc = querychat(
+qc = qc <- querychat::QueryChat$new(
   con, "scout_postings",
   client   = client,
   tools    = c("filter", "query", "visualize"),
