@@ -14,8 +14,13 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Cincy Crashes
 ```{r APIs}
-
+httr2::request("https://data.cincinnati-oh.gov/resource/rvmt-pkmq.json") |>
+  httr2::req_url_query("$limit" = 5) |>
+  httr2::req_perform() |>
+  httr2::resp_body_string() |>
+  jsonlite::fromJSON()
 ```
 
 
