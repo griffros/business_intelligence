@@ -1,0 +1,21 @@
+---
+title: "Class08"
+date: "2026-09-21"
+output:   
+  html_document:
+  toc: true
+  toc_float: true
+  number_secitons: true
+  code_download: true
+  code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r APIs}
+
+```
+
+

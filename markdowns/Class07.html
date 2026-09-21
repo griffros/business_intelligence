@@ -416,6 +416,168 @@ jobs |&gt;
 ## 1 federal         548       0     
 ## 2 fulltime       1257       0.100 
 ## 3 internship       86       0.0116</code></pre>
+<pre class="r"><code># Among full-time postings, which states have the highest remote share?
+# Based on the vote in class, I  will deviate from the answer on the slides
+
+jobs |&gt;
+  dplyr::group_by(category, location_state) |&gt;
+  dplyr::summarise(
+    postings = dplyr::n(),
+    remote_share = mean(remote) |&gt; round(digits =2)
+  )|&gt;
+  dplyr::arrange(dplyr::desc(remote_share)) |&gt;
+  na.omit() # to drop the location_state == NA</code></pre>
+<pre><code>## `summarise()` has regrouped the output.
+## ℹ Summaries were computed grouped by category and location_state.
+## ℹ Output is grouped by category.
+## ℹ Use `summarise(.groups = &quot;drop_last&quot;)` to silence this message.
+## ℹ Use `summarise(.by = c(category, location_state))` for per-operation grouping
+##   (`?dplyr::dplyr_by`) instead.</code></pre>
+<pre><code>## # A tibble: 68 × 4
+## # Groups:   category [3]
+##    category location_state postings remote_share
+##    &lt;chr&gt;    &lt;chr&gt;             &lt;int&gt;        &lt;dbl&gt;
+##  1 fulltime OH                   95         0.18
+##  2 fulltime NC                   98         0.13
+##  3 fulltime KY                   18         0.11
+##  4 fulltime PA                   79         0.11
+##  5 fulltime IL                  125         0.1 
+##  6 fulltime IN                   52         0.1 
+##  7 fulltime NY                  156         0.1 
+##  8 fulltime TX                  248         0.1 
+##  9 fulltime GA                  106         0.08
+## 10 fulltime CA                  272         0.06
+## # ℹ 58 more rows</code></pre>
+</div>
+<div id="airbnb" class="section level1">
+<h1>Airbnb</h1>
+<pre class="r"><code>con = DBI::dbConnect(RSQLite::SQLite(), &quot;../data/midwest_airbnb.db&quot;)
+listings = DBI::dbReadTable(con, &quot;listings&quot;) |&gt;
+  tibble::as_tibble()
+DBI::dbDisconnect(con)
+dplyr::glimpse(listings)</code></pre>
+<pre><code>## Rows: 14,887
+## Columns: 29
+## $ city                    &lt;chr&gt; &quot;Chicago&quot;, &quot;Chicago&quot;, &quot;Chicago&quot;, &quot;Chicago&quot;, &quot;C…
+## $ snapshot_date           &lt;chr&gt; &quot;2026-07-20&quot;, &quot;2026-07-20&quot;, &quot;2026-07-20&quot;, &quot;202…
+## $ id                      &lt;chr&gt; &quot;2384&quot;, &quot;7126&quot;, &quot;10945&quot;, &quot;12140&quot;, &quot;71930&quot;, &quot;94…
+## $ name                    &lt;chr&gt; &quot;Hyde Park: 5 minute walk to Obama Presidentia…
+## $ host_id                 &lt;chr&gt; &quot;2613&quot;, &quot;17928&quot;, &quot;33004&quot;, &quot;46734&quot;, &quot;334241&quot;, &quot;…
+## $ host_name               &lt;chr&gt; &quot;Rebecca&quot;, &quot;Sarah&quot;, &quot;Elizabeth&quot;, &quot;Shar And Rob…
+## $ host_since              &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ host_is_superhost       &lt;chr&gt; &quot;t&quot;, &quot;t&quot;, &quot;t&quot;, &quot;f&quot;, &quot;t&quot;, &quot;f&quot;, &quot;t&quot;, &quot;t&quot;, &quot;t&quot;, &quot;…
+## $ neighbourhood           &lt;chr&gt; &quot;Hyde Park&quot;, &quot;West Town&quot;, &quot;Lincoln Park&quot;, &quot;Lin…
+## $ latitude                &lt;dbl&gt; 41.78790, 41.90138, 41.91196, 41.92385, 41.896…
+## $ longitude               &lt;dbl&gt; -87.58780, -87.68153, -87.63981, -87.64910, -8…
+## $ property_type           &lt;chr&gt; &quot;Private room in condo&quot;, &quot;Entire rental unit&quot;,…
+## $ room_type               &lt;chr&gt; &quot;Private room&quot;, &quot;Entire home/apt&quot;, &quot;Entire hom…
+## $ accommodates            &lt;int&gt; 1, 2, 4, 3, 2, 1, 8, 10, 5, 2, 1, 2, 2, 2, 1, …
+## $ bedrooms                &lt;dbl&gt; NA, 1, 2, 1, NA, 1, 3, 4, 2, 1, 1, 2, NA, 2, 1…
+## $ beds                    &lt;dbl&gt; 1, 1, 2, 1, 1, 1, 3, 4, 3, 1, 1, 1, 1, NA, NA,…
+## $ bathrooms_text          &lt;chr&gt; &quot;1 shared bath&quot;, &quot;1 bath&quot;, &quot;1 bath&quot;, &quot;1 privat…
+## $ price                   &lt;dbl&gt; 171.33, 126.00, 278.50, 447.00, 131.00, 245.33…
+## $ minimum_nights          &lt;int&gt; 3, 2, 2, 2, 2, 2, 32, 32, 2, 32, 32, 32, 2, 18…
+## $ availability_365        &lt;int&gt; 306, 264, 271, 23, 218, 132, 360, 356, 290, 17…
+## $ number_of_reviews       &lt;int&gt; 268, 630, 155, 22, 161, 50, 77, 87, 750, 322, …
+## $ number_of_reviews_ltm   &lt;int&gt; 13, 46, 30, 4, 25, 14, 0, 0, 46, 2, 1, 3, 24, …
+## $ first_review            &lt;chr&gt; &quot;2015-01-09&quot;, &quot;2009-07-03&quot;, &quot;2014-04-28&quot;, &quot;201…
+## $ last_review             &lt;chr&gt; &quot;2026-06-08&quot;, &quot;2026-06-30&quot;, &quot;2026-06-21&quot;, &quot;202…
+## $ review_scores_rating    &lt;dbl&gt; 4.99, 4.74, 4.78, 4.95, 4.89, 4.90, 4.78, 4.78…
+## $ reviews_per_month       &lt;dbl&gt; 1.91, 3.04, 1.04, 0.16, 0.87, 1.03, 0.59, 0.64…
+## $ instant_bookable        &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA…
+## $ estimated_revenue_l365d &lt;dbl&gt; 13364, 32130, 50130, 10728, 19650, 20608, 0, 0…
+## $ amenities_count         &lt;int&gt; 47, 41, 49, 27, 43, 37, 35, 34, 77, 39, 36, 36…</code></pre>
+<pre class="r"><code># 1. How many listings per city
+# If the answer is purely based on last class, I can group by City and Count the number of listings in each city 
+
+# This: 
+listings |&gt; dplyr::group_by(city) |&gt; 
+  dplyr::summarise(count = dplyr::n())</code></pre>
+<pre><code>## # A tibble: 3 × 2
+##   city        count
+##   &lt;chr&gt;       &lt;int&gt;
+## 1 Chicago      7439
+## 2 Columbus     2587
+## 3 Twin Cities  4861</code></pre>
+<pre class="r"><code># Or this:
+listings |&gt; dplyr::count(city)</code></pre>
+<pre><code>## # A tibble: 3 × 2
+##   city            n
+##   &lt;chr&gt;       &lt;int&gt;
+## 1 Chicago      7439
+## 2 Columbus     2587
+## 3 Twin Cities  4861</code></pre>
+<pre class="r"><code># Or this: 
+table(listings$city)</code></pre>
+<pre><code>## 
+##     Chicago    Columbus Twin Cities 
+##        7439        2587        4861</code></pre>
+<pre class="r"><code># 2. What is the median price in each city?
+
+listings |&gt; dplyr::filter(
+  room_type == &quot;Entire home/apt&quot; &amp; accommodates &gt;= 4
+  ) |&gt;
+  dplyr::group_by(city) |&gt;
+  dplyr::summarise(
+    median_price = median(price)
+  )</code></pre>
+<pre><code>## # A tibble: 3 × 2
+##   city        median_price
+##   &lt;chr&gt;              &lt;dbl&gt;
+## 1 Chicago             312 
+## 2 Columbus            240.
+## 3 Twin Cities         311</code></pre>
+<pre class="r"><code># 3. Add price_per_person = price / accommodates. Which three listings are cheapest per person? Believe them?
+  
+listings |&gt;
+  dplyr::mutate(price_per_person = price / accommodates) |&gt;
+  dplyr::select(city, host_name, name, price, accommodates, price_per_person) |&gt;
+  dplyr::arrange(price_per_person)</code></pre>
+<pre><code>## # A tibble: 14,887 × 6
+##    city        host_name name                price accommodates price_per_person
+##    &lt;chr&gt;       &lt;chr&gt;     &lt;chr&gt;               &lt;dbl&gt;        &lt;int&gt;            &lt;dbl&gt;
+##  1 Twin Cities Ana       Casa hermosa y tra…  4.17            7            0.596
+##  2 Twin Cities Tayva     Boho Modern Condo … 12.3             6            2.06 
+##  3 Chicago     Dan       Entire Two Bedroom…  9.57            4            2.39 
+##  4 Chicago     Crystal   Warm cozy private …  7.6             3            2.53 
+##  5 Chicago     Shane     OFFICE SPACE ONLY …  2.56            1            2.56 
+##  6 Columbus    Toussaint Beautifull house i… 10.7             4            2.67 
+##  7 Twin Cities Tati      Zzzzzz Cheerful pr…  2.8             1            2.8  
+##  8 Twin Cities Jie       Columbia Height 50…  2.82            1            2.82 
+##  9 Columbus    Alex      Top Floor Loft       6.79            2            3.40 
+## 10 Twin Cities Brett     Central, Family-Fr… 22.4             6            3.74 
+## # ℹ 14,877 more rows</code></pre>
+<pre class="r"><code># 4. Which five host_names have the most listings?
+listings |&gt; dplyr::count(host_name, sort = T)</code></pre>
+<pre><code>## # A tibble: 3,328 × 2
+##    host_name               n
+##    &lt;chr&gt;               &lt;int&gt;
+##  1 Evolve                158
+##  2 RoomPicks             145
+##  3 David                 129
+##  4 Luxury Bookings Fze   104
+##  5 Jessica               102
+##  6 Matt                   95
+##  7 Michael                93
+##  8 Minnestay              89
+##  9 John                   88
+## 10 ⁨Cloud9⁩                 88
+## # ℹ 3,318 more rows</code></pre>
+<pre class="r"><code>listings |&gt; dplyr::count(host_name, host_id, sort = T)</code></pre>
+<pre><code>## # A tibble: 6,970 × 3
+##    host_name                host_id       n
+##    &lt;chr&gt;                    &lt;chr&gt;     &lt;int&gt;
+##  1 Luxury Bookings Fze      446820235   104
+##  2 Evolve                   456378235    95
+##  3 Minnestay                24051954     89
+##  4 ⁨Cloud9⁩                   248760412    88
+##  5 RoomPicks                501999514    80
+##  6 Jessica                  28252451     78
+##  7 Matt                     391945218    73
+##  8 RoomPicks Accommodations 5615582      68
+##  9 Milan                    395498979    67
+## 10 Sara                     432234139    63
+## # ℹ 6,960 more rows</code></pre>
 </div>
 
 
