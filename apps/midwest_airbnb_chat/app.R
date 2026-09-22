@@ -149,7 +149,7 @@ ui = page_sidebar(
   
   card(
     card_header("About"),
-    p("Created by Griffin Rosbottom - Info Systems & Economics @ Miami University."),
+    p("Created by Griffin Rosbottom - Information Systems & Economics @ Miami University."),
     p(
       "Source: ",
       a("Inside Airbnb", href = "https://insideairbnb.com/get-the-data/"),
