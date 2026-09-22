@@ -8,6 +8,28 @@ A twelve-line [querychat](https://github.com/posit-dev/querychat) app built in I
 
 ---
 
+## Example questions
+
+### 1. Which Columbus neighbourhood has the priciest entire homes?
+
+![Columbus question and generated SQL](screenshots/Columbus1.png)
+
+![Columbus query results](screenshots/Columbus2.png)
+
+![Columbus price comparison explanation](screenshots/Columbus3.png)
+
+### 2. Do superhosts charge more per night than other hosts? Show it as a bar chart.
+
+![Superhost comparison question](screenshots/Superhost2.png)
+
+![Superhost price comparison chart and explanation](screenshots/Superhost1.png)
+
+### 3. How many listings could accommodate ten guests?
+
+![Number of listings accommodating at least ten guests](screenshots/Capacity1.png)
+
+---
+
 ## What is this app?
 
 The app connects to a SQLite database (`data/scout.db`), hands the `scout_postings` table to querychat, and lets an LLM translate your question into SQL. Every answer shows the query it ran, so you can check the logic and reuse the SQL yourself.
