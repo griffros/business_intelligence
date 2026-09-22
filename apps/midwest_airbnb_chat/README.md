@@ -1,4 +1,4 @@
-# ISA 401 Job Scout Chat
+# ISA 401 Airbnb Project Documentation 
 
 **Ask a question in plain English, get the SQL and a table back**
 
