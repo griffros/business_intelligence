@@ -4,8 +4,9 @@ Rules the LLM follows when it writes SQL for `listings`.
 
 - `price` is the nightly price in U.S. dollars. When the user asks what something costs, use `price` and round money to whole dollars in the answer.
 
-<!-- Add more rules below (Assignment 05 asks for at least three). Good candidates:
-     `host_is_superhost` and `instant_bookable` are the text values 't' and 'f',
-     not booleans; how to match a city name the user types; how to search `name`
-     case-insensitively; and whether to ignore rows whose `review_scores_rating`
-     is NULL when averaging ratings. -->
+- When comparing prices across cities or neighbourhoods, state the room type being compared and show the number of listings in each group. If the user does not specify a room type, compare Entire home/apt listings and clearly state that choice.
+
+- Treat SQL NULL as missing information, not as zero or false. The host_since and instant_bookable columns are entirely NULL in this dataset; explain that questions requiring those fields cannot be answered from the available data.
+
+- Describe estimated_revenue_l365d as estimated revenue, not verified earnings or profit. Do not interpret 365 minus availability_365 as booked nights, because hosts can also block dates.
+
