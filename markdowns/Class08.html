@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2026-09-21" />
+<meta name="date" content="2026-09-23" />
 
 <title>Class08</title>
 
@@ -350,7 +350,7 @@ display: none;
 
 
 <h1 class="title toc-ignore">Class08</h1>
-<h4 class="date">2026-09-21</h4>
+<h4 class="date">2026-09-23</h4>
 
 </div>
 
@@ -363,11 +363,11 @@ display: none;
   httr2::resp_body_string() |&gt;
   jsonlite::fromJSON()</code></pre>
 <pre><code>##         address_x latitude_x longitude_x  age community_council_neighborhood
-## 1 S I75 AT 8-5 MM  39.186335  -84.482478   27                            N/A
-## 2 S I75 AT 8-5 MM  39.187715  -84.482218   24                            N/A
-## 3 16XX YONKERS AV   39.10361   -84.51171 &lt;NA&gt;                       DOWNTOWN
-## 4 55XX MEDPACE WY  39.160986  -84.400821   18                   MADISONVILLE
-## 5 55XX MEDPACE WY  39.161686  -84.401531   37                   MADISONVILLE
+## 1 S I75 AT 8-5 MM  39.186955  -84.483518   27                            N/A
+## 2 S I75 AT 8-5 MM  39.186955  -84.483068   24                            N/A
+## 3 16XX YONKERS AV   39.10227   -84.51183 &lt;NA&gt;                       DOWNTOWN
+## 4 55XX MEDPACE WY  39.160396  -84.401551   18                   MADISONVILLE
+## 5 55XX MEDPACE WY  39.160306  -84.401171   37                   MADISONVILLE
 ##        cpd_neighborhood sna_neighborhood               crashdate
 ## 1                   N/A              N/A 2026-08-23T14:00:00.000
 ## 2                   N/A              N/A 2026-08-23T14:00:00.000
@@ -410,6 +410,93 @@ display: none;
 ## 3 1 - CLEAR 45225      &lt;NA&gt;                 &lt;NA&gt;
 ## 4 1 - CLEAR 45227         3 Minor Arterial Roads
 ## 5 1 - CLEAR 45227         3 Minor Arterial Roads</code></pre>
+</div>
+<div id="fred-api" class="section level1">
+<h1>FRED API</h1>
+<pre class="r"><code>httr2::request(&quot;https://api.stlouisfed.org/fred/series/observations&quot;) |&gt;
+  httr2::req_url_query(
+    series_id = &quot;IHLIDXUSOH&quot;,
+    api_key = Sys.getenv(&quot;FRED_API_KEY&quot;),
+    file_type = &quot;json&quot;
+  ) |&gt;
+  httr2::req_perform() |&gt;
+  httr2::resp_body_string()|&gt;
+  jsonlite::fromJSON() -&gt; ohio_jobs
+
+
+jobs_df = ohio_jobs[[13]]
+
+# To get data from sept 1, 2026
+
+# (a) Get all the data filter rows I want 
+dplyr::glimpse(jobs_df)</code></pre>
+<pre><code>## Rows: 2,415
+## Columns: 4
+## $ realtime_start &lt;chr&gt; &quot;2026-09-16&quot;, &quot;2026-09-16&quot;, &quot;2026-09-16&quot;, &quot;2026-09-16&quot;,…
+## $ realtime_end   &lt;chr&gt; &quot;2026-09-16&quot;, &quot;2026-09-16&quot;, &quot;2026-09-16&quot;, &quot;2026-09-16&quot;,…
+## $ date           &lt;chr&gt; &quot;2020-02-01&quot;, &quot;2020-02-02&quot;, &quot;2020-02-03&quot;, &quot;2020-02-04&quot;,…
+## $ value          &lt;chr&gt; &quot;100.0&quot;, &quot;99.99&quot;, &quot;99.96&quot;, &quot;100.01&quot;, &quot;100.04&quot;, &quot;100.17&quot;…</code></pre>
+<pre class="r"><code>jobs_df |&gt; 
+  dplyr::mutate(
+    date = lubridate::ymd(date)
+  ) |&gt; 
+  dplyr::filter(date &gt;= &#39;2026-09-01&#39;) -&gt; jobs_df_mod
+
+# (b) Or use API
+
+httr2::request(&quot;https://api.stlouisfed.org/fred/series/observations&quot;) |&gt;
+  httr2::req_url_query(
+    series_id = &quot;IHLIDXUSOH&quot;,
+    api_key = Sys.getenv(&quot;FRED_API_KEY&quot;),
+    file_type = &quot;json&quot;,
+    observation_start=&quot;2026-09-01&quot;
+  ) |&gt;
+  httr2::req_perform() |&gt;
+  httr2::resp_body_string()|&gt;
+  jsonlite::fromJSON() -&gt; ohio_jobs_sep_2026
+
+ohio_jobs_sep_2026_df = ohio_jobs_sep_2026$observations</code></pre>
+</div>
+<div id="usa-jobs-api" class="section level1">
+<h1>USA JOBS API</h1>
+<pre class="r"><code>httr2::request(&quot;https://data.usajobs.gov/api/search&quot;) |&gt;
+  httr2::req_url_query(Keyword = &quot;Data Analyst&quot;, ResultsPerPage = 500) |&gt;
+  httr2::req_headers(
+    Host = &quot;data.usajobs.gov&quot;,
+    &quot;User-Agent&quot; = &quot;rosbotgm@miamioh.edu&quot;,
+    &quot;Authorization-Key&quot; = Sys.getenv(&quot;USAJOBS_API_KEY&quot;)
+  ) |&gt;
+  httr2::req_perform() |&gt;
+  httr2::resp_body_string() |&gt;
+  jsonlite::fromJSON(flatten = TRUE) -&gt; usa_jobs_list
+
+usa_df = usa_jobs_list$SearchResult$SearchResultItems
+
+jobs_small = usa_df |&gt;
+  dplyr::select(
+    title = MatchedObjectDescriptor.PositionTitle,
+    department = MatchedObjectDescriptor.DepartmentName,
+    agency = MatchedObjectDescriptor.OrganizationName,
+    location = MatchedObjectDescriptor.PositionLocationDisplay,
+    closes = MatchedObjectDescriptor.ApplicationCloseDate
+  )
+
+#1. How many federal postings match &quot;Data Analyst&quot; today?
+
+usa_jobs_list$SearchResult$SearchResultCountAll</code></pre>
+<pre><code>## [1] 243</code></pre>
+<pre class="r"><code>#2. Which three departments have the most of them?
+usa_df |&gt;
+  dplyr::count(MatchedObjectDescriptor.DepartmentName, sort = TRUE) |&gt;
+  head(3)</code></pre>
+<pre><code>##   MatchedObjectDescriptor.DepartmentName  n
+## 1         Department of Veterans Affairs 54
+## 2            Department of the Air Force 50
+## 3                  Department of Defense 31</code></pre>
+<pre class="r"><code>index_data_analyst = jobs_small$title |&gt;
+  stringr::str_detect(pattern = &quot;Data Analyst|Data Analytics&quot;)
+
+jobs = jobs_small[index_data_analyst, ]  </code></pre>
 </div>
 
 
