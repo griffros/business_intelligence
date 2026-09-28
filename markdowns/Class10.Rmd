@@ -1,0 +1,70 @@
+---
+title: "Class10"
+date: "2026-28-16"
+output:   
+  html_document:
+  toc: true
+  toc_float: true
+  number_secitons: true
+  code_download: true
+  code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Check scraping permission
+
+```{r check-permission}
+robotstxt::paths_allowed(
+  paths = "/courses-instruction/isa/",
+  domain = "bulletin.miamioh.edu"
+)
+```
+
+
+## Load ISA page
+
+```{r load-isa-page}
+ISA_courses_in_R <- rvest::read_html(
+  "https://bulletin.miamioh.edu/courses-instruction/isa/"
+)
+```
+
+
+## Extract titles
+
+```{r extract-titles}
+ISA_titles <- ISA_courses_in_R |>
+  rvest::html_elements(".courseblocktitle") |>
+  rvest::html_text2()
+
+ISA_titles
+```
+
+
+## Extract descriptions
+
+```{r extract-descriptions}
+ISA_descriptions <- ISA_courses_in_R |>
+  rvest::html_elements(".courseblockdesc") |>
+  rvest::html_text2()
+
+ISA_descriptions
+```
+
+
+## Get course data
+
+```{r isa-course-data}
+length(ISA_titles)
+length(ISA_descriptions)
+
+ISA_courses <- data.frame(
+  title = ISA_titles,
+  description = ISA_descriptions
+)
+
+ISA_courses
+```
