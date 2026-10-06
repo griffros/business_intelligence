@@ -1,0 +1,138 @@
+---
+title: 'Hw/Assignment #7'
+date: "10-06-2026"
+output:   
+  html_document:
+  toc: true
+  toc_float: true
+  number_secitons: true
+  code_download: true
+  code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## FSB Directory
+
+```{r fsb-directory}
+# Read the Accountancy directory first
+accountancy_url = "https://miamioh.edu/fsb/directory/?up=/query/all/all/Accountancy/all"
+
+accountancy_page = rvest::read_html(accountancy_url)
+
+# Extract the department from the first column
+accountancy_departments = accountancy_page |>
+  rvest::html_elements("table td:first-child") |>
+  rvest::html_text2()
+
+# Select the links containing people's names
+accountancy_links = accountancy_page |>
+  rvest::html_elements("table td:nth-child(3) strong a")
+
+# Extract the name text
+accountancy_names = accountancy_links |>
+  rvest::html_text2()
+
+# Extract each person's position
+accountancy_positions = accountancy_page |>
+  rvest::html_elements("table td:nth-child(3) i") |>
+  rvest::html_text2()
+
+# Extract the website linked to each person's name
+accountancy_websites = accountancy_links |>
+  rvest::html_attr("href")
+
+# Check that all four fields have the same number of values
+length(accountancy_departments)
+length(accountancy_names)
+length(accountancy_positions)
+length(accountancy_websites)
+
+# Combine the fields into one data frame
+accountancy_df = data.frame(
+  department = accountancy_departments,
+  name = accountancy_names,
+  position = accountancy_positions,
+  website = accountancy_websites
+)
+
+head(accountancy_df)
+```
+
+# All Departments
+
+```{r all-departments}
+# Department values used in the directory URLs
+department_paths = c(
+  "Accountancy" = "Accountancy",
+  "Economics" = "Economics",
+  "Entrepreneurship" = "Entrepreneurship",
+  "Finance" = "Finance",
+  "Information Systems & Analytics" =
+    "Information%20Systems%20--%20Analytics",
+  "Marketing" = "Marketing",
+  "Management" = "Management"
+)
+
+# Extract one department using the selectors checked above
+scrape_department = function(department_path) {
+  directory_url = paste0(
+    "https://miamioh.edu/fsb/directory/?up=/query/all/all/",
+    department_path,
+    "/all"
+  )
+
+  directory_page = rvest::read_html(directory_url)
+
+  person_links = directory_page |>
+    rvest::html_elements("table td:nth-child(3) strong a")
+
+  department_result = data.frame(
+   department = rep(
+  names(department_paths)[match(department_path, department_paths)],
+  length(person_links)
+),
+
+    name = person_links |>
+      rvest::html_text2(),
+
+    position = directory_page |>
+      rvest::html_elements("table td:nth-child(3) i") |>
+      rvest::html_text2(),
+
+    website = person_links |>
+      rvest::html_attr("href")
+  )
+
+  Sys.sleep(1)
+
+  return(department_result)
+}
+
+# Apply the function to all seven departments
+department_results = purrr::map(
+  department_paths,
+  scrape_department
+)
+
+# Combine the results into a single data frame
+fsb_directory = dplyr::bind_rows(department_results)
+
+# Required assignment output
+head(fsb_directory)
+
+# Confirm all seven departments appear and see their row counts
+fsb_directory |>
+  dplyr::count(department)
+
+# Check for missing or blank fields
+fsb_directory |>
+  dplyr::summarise(
+    dplyr::across(
+      dplyr::everything(),
+      ~ sum(is.na(.x) | trimws(.x) == "")
+    )
+  )
+```
