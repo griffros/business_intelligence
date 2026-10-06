@@ -1,0 +1,156 @@
+---
+title: "Class12"
+date: "10-06-2026"
+output:   
+  html_document:
+  toc: true
+  toc_float: true
+  number_secitons: true
+  code_download: true
+  code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Plane Crash Info Example
+```{r crashes}
+library(rvest)
+library(dplyr)
+library(lubridate)
+
+# Read the page with the encoding fix
+crash_url <- "https://planecrashinfo.com/2025/2025.htm"
+
+crash_page <- read_html(
+  crash_url,
+  encoding = "ISO-8859-1"
+)
+
+crash_page
+
+# Extract the table
+crash_tables <- crash_page |>
+  html_elements("table") |>
+  html_table()
+
+# Pull the first table out of the list
+crash_df <- crash_tables[[1]]
+
+# Use the first row as the column names
+colnames(crash_df) <- crash_df[1, ]
+
+# Remove the first row because it contains column names
+crash_df <- crash_df[-1, ]
+
+# Convert Date from character to a Date object
+crash_df <- crash_df |>
+  mutate(Date = dmy(Date))
+
+head(crash_df)
+```
+
+## Salvage Run
+
+```{r game}
+page = rvest::read_html(
+  "https://isa401-salvage.vercel.app/registry?start=1"
+)
+
+classes = page |>
+  rvest::html_elements("span.ship-class") |>
+  rvest::html_text2()
+
+length(classes)
+
+sum(classes == "Dreadnought")
+
+# Loop
+
+base = "https://isa401-salvage.vercel.app"
+
+starts = seq(from = 1, to = 351, by = 50)
+
+pages = vector("list", length(starts))
+
+for (i in seq_along(starts)) {
+  pg = rvest::read_html(
+    paste0(base, "/registry?start=", starts[i])
+  )
+
+  pages[[i]] = data.frame(
+    class = pg |>
+      rvest::html_elements("span.ship-class") |>
+      rvest::html_text2(),
+
+    value = pg |>
+      rvest::html_elements("span.salvage-value") |>
+      rvest::html_text2() |>
+      readr::parse_number()
+  )
+
+  Sys.sleep(1)
+}
+
+registry = dplyr::bind_rows(pages)
+
+# Check that all 400 wrecks were collected
+nrow(registry)
+
+# Keep only Dreadnoughts
+dreadnoughts = registry |>
+  dplyr::filter(class == "Dreadnought")
+
+# Check the number of Dreadnoughts
+nrow(dreadnoughts)
+
+# Calculate their total estimated salvage
+sum(dreadnoughts$value)
+```
+
+## Structured Text Extraction
+
+### Course Information
+
+```{r courses}
+# Read the ISA course catalog
+course_url = "https://bulletin.miamioh.edu/courses-instruction/isa/"
+
+course_page = rvest::read_html(course_url)
+
+# Extract the text of the first course, ISA125
+isa125_text = course_page |>
+  rvest::html_element("div.courseblock") |>
+  rvest::html_text2()
+
+isa125_text
+
+# Define the chat object using the same settings as the earlier app
+chat = ellmer::chat_openai(
+  model = "gpt-5.6-luna",
+  params = ellmer::params(reasoning_effort = "none")
+)
+
+# Extract the three fields demonstrated in Class 12
+course_info = chat$chat_structured(
+  isa125_text,
+  type = ellmer::type_object(
+    name = ellmer::type_string(
+      description = "The name of the course, without the course code."
+    ),
+    description = ellmer::type_string(
+      description = "The description of the course, without the prerequisites."
+    ),
+    prereqs = ellmer::type_string(
+      description = "List the information after the Prerequisites label."
+    )
+  )
+)
+
+# Inspect the extracted information
+course_info
+
+# Print the complete prerequisites field
+course_info$prereqs
+```
