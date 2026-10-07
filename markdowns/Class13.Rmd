@@ -1,0 +1,44 @@
+---
+title: "Class13"
+date: "10-14-2026"
+output:   
+  html_document:
+  toc: true
+  toc_float: true
+  number_secitons: true
+  code_download: true
+  code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#  Plane Crash Data
+```{r}
+year = 2025
+
+crash_url = paste0('https://planecrashinfo.com/', year, '/', year, '.htm')
+
+crash_page <- rvest::read_html(crash_url, encoding = 'ISO-8859-1')
+crash_page|>
+  rvest::html_elements("td:nth-child(1) > font > a") |>
+  rvest::html_text2() -> dates
+
+crash_page|>
+  rvest::html_elements("td:nth-child(2) > font > a") |>
+  rvest::html_text2() -> loc_op
+
+# Skipped column 3 for time
+
+crash_page|>
+  rvest::html_elements("td:nth-child(4) > font > a") |>
+  rvest::html_text2() -> fatalities
+
+df = data.frame(dates = dates, loc = loc_op[-1], fatalities = fatalities[-1])|>
+  tidyr::sperate(
+    loc, into = c("location", "operator", sep, "=\n")
+  )
+```
+
