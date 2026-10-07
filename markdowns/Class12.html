@@ -525,6 +525,79 @@ course_info$prereqs</code></pre>
 <pre><code>## [1] &quot;MTH 102 or MTH 121 or MTH 125, MTH 122, MTH 141 or MTH 151; ACT Math Score of 22 or higher; SAT Math Score of 540 or higher; or Miami International Math Placement Test score of 8 or higher; or successful completion of MTH 025; or permission of department chair.&quot;</code></pre>
 </div>
 </div>
+<div id="isa-125-extraction" class="section level2">
+<h2>ISA 125 Extraction</h2>
+<pre class="r"><code>chat = ellmer::chat_openai(
+  model = &quot;gpt-5.6-luna&quot;
+)
+
+isa125_courseblock = rvest::read_html(&quot;https://bulletin.miamioh.edu/courses-instruction/isa/&quot;)|&gt;
+  rvest::html_elements(&quot;#sc_sccoursedescs &gt; div:nth-child(1)&quot;)|&gt;
+  rvest::html_text2()
+
+chat$chat_structured(
+  isa125_courseblock,
+  type = ellmer::type_object(
+    # code is the name of the first element in the returned sub list
+    # type string forces element to be type chr
+    code = ellmer::type_string(
+      description = &quot;The three letter abbreviation for the course and its number. For example ISA 999 or FIN 444&quot;
+    ), 
+    name = ellmer::type_string(
+      description = &quot;The title of the course without the three abbreviation and the number. For example Introduction to Macroeconomics. Do not return a period after the name&quot;
+    ),
+    cr_hr = ellmer::type_integer(description = &quot;The number of credts shown in parantheses after the course code and title&quot;)
+  )
+)</code></pre>
+<pre><code>## $code
+## [1] &quot;ISA 125&quot;
+## 
+## $name
+## [1] &quot;Introduction to Business Statistics&quot;
+## 
+## $cr_hr
+## [1] 3</code></pre>
+</div>
+<div id="all-150-isa-courses" class="section level1">
+<h1>All 150 ISA courses</h1>
+<pre class="r"><code>course_vec = rvest::read_html(&quot;https://bulletin.miamioh.edu/courses-instruction/isa/&quot;) |&gt;
+  rvest::html_elements(&quot;.courseblock&quot;) |&gt; rvest::html_text2()
+
+course_list = as.list(course_vec) # make a list 
+
+type_course = ellmer::type_object(
+    # code is the name of the first element in the returned sub list
+    # type string forces element to be type chr
+    code = ellmer::type_string(
+      description = &quot;The three letter abbreviation for the course and its number. For example ISA 999 or FIN 444&quot;
+    ), 
+    name = ellmer::type_string(
+      description = &quot;The title of the course without the three abbreviation and the number. For example Introduction to Macroeconomics. Do not return a period after the name&quot;
+    ),
+    cr_hr = ellmer::type_integer(description = &quot;The number of credts shown in parantheses after the course code and title&quot;)
+  )
+
+isa_df = ellmer::parallel_chat_structured(
+  chat = chat, prompts = course_list, type = type_course, include_tokens = T, include_cost = T
+)</code></pre>
+<pre><code>## [working] (39 + 0) -&gt; 10 -&gt; 1 | ■■ 2%[working] (31 + 0) -&gt; 10 -&gt; 9 | ■■■■■■
+## 18%[working] (30 + 0) -&gt; 10 -&gt; 10 | ■■■■■■■ 20%[working] (29 + 0) -&gt; 10 -&gt; 11 |
+## ■■■■■■■■ 22%[working] (25 + 0) -&gt; 10 -&gt; 15 | ■■■■■■■■■■ 30%[working] (20 + 0)
+## -&gt; 10 -&gt; 20 | ■■■■■■■■■■■■■ 40%[working] (19 + 0) -&gt; 10 -&gt; 21 | ■■■■■■■■■■■■■■
+## 42%[working] (18 + 0) -&gt; 10 -&gt; 22 | ■■■■■■■■■■■■■■ 44%[working] (13 + 0) -&gt; 10
+## -&gt; 27 | ■■■■■■■■■■■■■■■■■ 54%[working] (9 + 0) -&gt; 10 -&gt; 31 |
+## ■■■■■■■■■■■■■■■■■■■■ 62% [working] (8 + 0) -&gt; 10 -&gt; 32 | ■■■■■■■■■■■■■■■■■■■■
+## 64%[working] (6 + 0) -&gt; 10 -&gt; 34 | ■■■■■■■■■■■■■■■■■■■■■ 68%[working] (3 + 0)
+## -&gt; 11 -&gt; 36 | ■■■■■■■■■■■■■■■■■■■■■■■ 72%[working] (2 + 0) -&gt; 11 -&gt; 37 |
+## ■■■■■■■■■■■■■■■■■■■■■■■ 74%[working] (0 + 0) -&gt; 9 -&gt; 41 |
+## ■■■■■■■■■■■■■■■■■■■■■■■■■■ 82% [working] (0 + 0) -&gt; 8 -&gt; 42 |
+## ■■■■■■■■■■■■■■■■■■■■■■■■■■ 84%[working] (0 + 0) -&gt; 6 -&gt; 44 |
+## ■■■■■■■■■■■■■■■■■■■■■■■■■■■ 88%[working] (0 + 0) -&gt; 3 -&gt; 47 |
+## ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ 94%[working] (0 + 0) -&gt; 1 -&gt; 49 |
+## ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ 98%</code></pre>
+<pre class="r"><code>sum(isa_df$cost)</code></pre>
+<pre><code>## [1] 0.0061734</code></pre>
+</div>
 
 
 

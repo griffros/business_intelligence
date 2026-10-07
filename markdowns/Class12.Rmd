@@ -154,3 +154,57 @@ course_info
 # Print the complete prerequisites field
 course_info$prereqs
 ```
+
+
+## ISA 125 Extraction
+```{r ISA 125}
+chat = ellmer::chat_openai(
+  model = "gpt-5.6-luna"
+)
+
+isa125_courseblock = rvest::read_html("https://bulletin.miamioh.edu/courses-instruction/isa/")|>
+  rvest::html_elements("#sc_sccoursedescs > div:nth-child(1)")|>
+  rvest::html_text2()
+
+chat$chat_structured(
+  isa125_courseblock,
+  type = ellmer::type_object(
+    # code is the name of the first element in the returned sub list
+    # type string forces element to be type chr
+    code = ellmer::type_string(
+      description = "The three letter abbreviation for the course and its number. For example ISA 999 or FIN 444"
+    ), 
+    name = ellmer::type_string(
+      description = "The title of the course without the three abbreviation and the number. For example Introduction to Macroeconomics. Do not return a period after the name"
+    ),
+    cr_hr = ellmer::type_integer(description = "The number of credts shown in parantheses after the course code and title")
+  )
+)
+```
+
+# All 150 ISA courses
+```{r}
+course_vec = rvest::read_html("https://bulletin.miamioh.edu/courses-instruction/isa/") |>
+  rvest::html_elements(".courseblock") |> rvest::html_text2()
+
+course_list = as.list(course_vec) # make a list 
+
+type_course = ellmer::type_object(
+    # code is the name of the first element in the returned sub list
+    # type string forces element to be type chr
+    code = ellmer::type_string(
+      description = "The three letter abbreviation for the course and its number. For example ISA 999 or FIN 444"
+    ), 
+    name = ellmer::type_string(
+      description = "The title of the course without the three abbreviation and the number. For example Introduction to Macroeconomics. Do not return a period after the name"
+    ),
+    cr_hr = ellmer::type_integer(description = "The number of credts shown in parantheses after the course code and title")
+  )
+
+isa_df = ellmer::parallel_chat_structured(
+  chat = chat, prompts = course_list, type = type_course, include_tokens = T, include_cost = T
+)
+
+sum(isa_df$cost)
+```
+
